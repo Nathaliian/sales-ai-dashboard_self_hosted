@@ -1,27 +1,25 @@
 import os
 from dotenv import load_dotenv
-from google import genai
+import google.generativeai as genai
 
-# Load .env
-load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+# Load environment variables
+load_dotenv()
 
-api_key = os.getenv("GEMINI_API_KEY")
-
-client = genai.Client(
-    api_key=api_key,
-    http_options={"api_version": "v1"}
-)
+# Configure Gemini API
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 
+# 🔹 Generate SQL from user question
 def generate_sql(question: str):
-    prompt = f"""
+    try:
+        prompt = f"""
 You are an expert SQL generator.
 
-Database: SQL Server
+Database: CSV (converted from SQL Server)
 
-Table: dbo.store_sales_data_cleaned
+Table name: store_sales_data_cleaned
 
-COLUMNS:
+Columns:
 customer_id, customer_name, last_name, date_of_birth,
 sales, year, outlet_type, city_type, category_of_goods,
 region, country, segment, sales_date, order_id, order_date,
@@ -29,35 +27,40 @@ ship_date, ship_mode, state, postal_code, product_id,
 sub_category, product_name, quantity, discount, profit,
 shipping_days, age, Age_Group
 
-RULES:
-- ALWAYS use dbo.store_sales_data_cleaned
-- ONLY use given columns
-- NEVER invent names
-- Use SQL Server syntax (TOP, not LIMIT)
-- ALWAYS use aliases (AS)
+Rules:
+- Use ONLY the given columns
+- Use correct SQL syntax
+- Use SUM(sales) for total sales
+- Use GROUP BY when needed
+- Use TOP N for limits (not LIMIT)
 
 Examples:
-- total sales → SELECT SUM(sales) AS total_sales FROM dbo.store_sales_data_cleaned
-- sales by region → SELECT region, SUM(sales) AS total_sales FROM dbo.store_sales_data_cleaned GROUP BY region
+total sales → SELECT SUM(sales) AS total_sales FROM store_sales_data_cleaned
+sales by region → SELECT region, SUM(sales) AS total_sales FROM store_sales_data_cleaned GROUP BY region
 
 Question: {question}
 
-Return ONLY SQL.
+Return ONLY SQL (no explanation).
 """
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
+        model = genai.GenerativeModel("gemini-1.5-flash")
 
-    sql = response.text.strip()
-    sql = sql.replace("```sql", "").replace("```", "").strip()
+        response = model.generate_content(prompt)
 
-    print("SQL:", sql)
+        sql = response.text.strip()
 
-    return sql
+        # Clean formatting
+        sql = sql.replace("```sql", "").replace("```", "").strip()
+
+        print("Generated SQL:", sql)
+
+        return sql
+
+    except Exception as e:
+        return f"SQL generation error: {str(e)}"
 
 
+# 🔹 Generate business insight from result
 def explain_result(question, df):
     try:
         data_sample = df.head(10).to_string()
@@ -71,14 +74,15 @@ User question:
 Query result:
 {data_sample}
 
-Give a short business insight (2 lines max).
-Mention key numbers clearly.
+Instructions:
+- Give a short insight (1–2 lines)
+- Mention key numbers
+- Keep it simple and clear
 """
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
+        model = genai.GenerativeModel("gemini-1.5-flash")
+
+        response = model.generate_content(prompt)
 
         return response.text.strip()
 
