@@ -1,8 +1,3 @@
-print("AVAILABLE MODELS:")
-for m in genai.list_models():
-    print(m.name)
-
-
 import os
 from dotenv import load_dotenv
 import google.generativeai as genai
@@ -12,6 +7,16 @@ load_dotenv()
 
 # Configure Gemini API
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+# ✅ FIX 1: Lazy model init — avoids startup crash on Render
+_model = None
+
+def get_model():
+    global _model
+    if _model is None:
+        # ✅ FIX 2: Use "models/" prefix — fixes 404 with google-generativeai==0.8.6
+        _model = genai.GenerativeModel("models/gemini-1.5-flash")
+    return _model
 
 
 # 🔹 Generate SQL from user question
@@ -48,9 +53,7 @@ Question: {question}
 Return ONLY SQL (no explanation).
 """
 
-        model = genai.GenerativeModel("gemini-1.5-flash")
-
-        response = model.generate_content(prompt)
+        response = get_model().generate_content(prompt)
 
         sql = response.text.strip()
 
@@ -85,9 +88,7 @@ Instructions:
 - Keep it simple and clear
 """
 
-        model = genai.GenerativeModel("gemini-1.5-flash")
-
-        response = model.generate_content(prompt)
+        response = get_model().generate_content(prompt)
 
         return response.text.strip()
 
