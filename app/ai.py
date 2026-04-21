@@ -1,3 +1,8 @@
+print("AVAILABLE MODELS:")
+for m in genai.list_models():
+    print(m.name)
+
+
 import os
 from dotenv import load_dotenv
 import google.generativeai as genai
