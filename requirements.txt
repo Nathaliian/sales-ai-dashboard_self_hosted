@@ -1,7 +1,5 @@
-fastapi
-uvicorn
-pandas
-python-dotenv
-requests
-matplotlib
-google-generativeai
+fastapi==0.111.0
+uvicorn==0.29.0
+pandas==2.2.2
+google-genai==1.10.0
+python-dotenv==1.0.1

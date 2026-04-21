@@ -1,32 +1,20 @@
 import os
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
 
-# Load environment variables
 load_dotenv()
 
-# Configure Gemini API
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
-# ✅ FIX 1: Lazy model init — avoids startup crash on Render
-_model = None
-
-def get_model():
-    global _model
-    if _model is None:
-        # ✅ FIX 2: Use "models/" prefix — fixes 404 with google-generativeai==0.8.6
-        _model = genai.GenerativeModel("models/gemini-1.5-flash")
-    return _model
+# ✅ New SDK client style
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+MODEL = "gemini-1.5-flash"
 
 
-# 🔹 Generate SQL from user question
 def generate_sql(question: str):
     try:
         prompt = f"""
 You are an expert SQL generator.
 
 Database: CSV (converted from SQL Server)
-
 Table name: store_sales_data_cleaned
 
 Columns:
@@ -52,27 +40,19 @@ Question: {question}
 
 Return ONLY SQL (no explanation).
 """
-
-        response = get_model().generate_content(prompt)
-
+        response = client.models.generate_content(model=MODEL, contents=prompt)
         sql = response.text.strip()
-
-        # Clean formatting
         sql = sql.replace("```sql", "").replace("```", "").strip()
-
         print("Generated SQL:", sql)
-
         return sql
 
     except Exception as e:
         return f"SQL generation error: {str(e)}"
 
 
-# 🔹 Generate business insight from result
 def explain_result(question, df):
     try:
         data_sample = df.head(10).to_string()
-
         prompt = f"""
 You are a business analyst.
 
@@ -87,9 +67,7 @@ Instructions:
 - Mention key numbers
 - Keep it simple and clear
 """
-
-        response = get_model().generate_content(prompt)
-
+        response = client.models.generate_content(model=MODEL, contents=prompt)
         return response.text.strip()
 
     except Exception as e:
