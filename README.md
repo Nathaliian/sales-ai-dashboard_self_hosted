@@ -30,5 +30,6 @@ pip install -r requirements.txt
 
 ## 1. File location
 Make sure:
-```text
-![Dashboard](frontend/screenshot.png)
+## 📸 Demo
+![Dashboard](screenshot.png)
+
