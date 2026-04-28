@@ -29,5 +29,5 @@ pip install -r requirements.txt
 ## 📸 Demo
 ![Dashboard](screenshot.png)
 
-![Dashboard](Cchart.png)
+![Dashboard](Chart.png)
 
