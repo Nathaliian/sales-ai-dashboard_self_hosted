@@ -23,4 +23,4 @@ An AI-powered analytics dashboard that converts natural language queries into SQ
 ```bash
 pip install -r requirements.txt
 ## 📸 Demo
-![Dashboard](Sales AI App.png)
+![Dashboard](screenshot.png)
