@@ -26,10 +26,6 @@ pip install -r requirements.txt
 
 ---
 
-# ⚠️ Important checks
-
-## 1. File location
-Make sure:
 ## 📸 Demo
 ![Dashboard](screenshot.png)
 
