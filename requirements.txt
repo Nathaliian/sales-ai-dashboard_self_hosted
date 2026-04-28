@@ -1,5 +1,5 @@
-fastapi==0.111.0
-uvicorn==0.29.0
-pandas
-google-genai==1.10.0
-python-dotenv==1.0.1
+fastapi
+uvicorn
+ollama
+pyodbc
+python-dotenv

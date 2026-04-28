@@ -13,41 +13,52 @@ if st.button("Ask"):
 
     if question:
         try:
-            res = requests.get(
-                "http://127.0.0.1:8000/ask",
-                params={"question": question}
+            # ✅ FIX: Use POST + correct endpoint
+            res = requests.post(
+                "http://127.0.0.1:8000/query",
+                json={"question": question}
             )
 
             data = res.json()
 
-            if "error" in data:
-                st.error(data["error"])
-
+            # ✅ Handle backend format
+            if not data.get("success"):
+                st.error(data.get("error", "Unknown error"))
             else:
-                # 💡 Insight
-                if "insight" in data:
+                response = data["data"]
+
+                # 💡 Explanation
+                if response.get("explanation"):
                     st.subheader("💡 Insight")
-                    st.success(data["insight"])
+                    st.success(response["explanation"])
 
-                # SQL
+                # 🧠 SQL
                 st.subheader("🧠 Generated SQL")
-                st.code(data["sql"], language="sql")
+                st.code(response["sql"], language="sql")
 
-                # Table
-                df = pd.DataFrame(data["data"])
+                # 📋 Table
+                rows = response.get("rows", [])
+                df = pd.DataFrame(rows)
 
                 st.subheader("📋 Result")
                 st.dataframe(df)
 
-                # Chart
-                if len(df.columns) >= 2:
+                # 📈 Chart (auto-detect numeric)
+                if not df.empty and len(df.columns) >= 2:
                     st.subheader("📈 Chart")
 
-                    x = df.columns[0]
-                    y = df.columns[1]
+                    # smarter column selection
+                    x_col = df.columns[0]
+
+                    # pick first numeric column
+                    numeric_cols = df.select_dtypes(include=['number']).columns
+                    if len(numeric_cols) > 0:
+                        y_col = numeric_cols[0]
+                    else:
+                        y_col = df.columns[1]
 
                     fig, ax = plt.subplots()
-                    ax.bar(df[x], df[y])
+                    ax.bar(df[x_col].astype(str), df[y_col])
                     plt.xticks(rotation=45)
 
                     st.pyplot(fig)

@@ -1,28 +1,52 @@
 from fastapi import APIRouter
-from app.ai import generate_sql, explain_result
-from app.utils import run_query
+from pydantic import BaseModel
 
+from app.ai import generate_sql, explain_result
+from app.db import run_query
+
+# ✅ DEFINE router FIRST
 router = APIRouter()
 
 
-@router.get("/ask")
-def ask(question: str):
+class QueryRequest(BaseModel):
+    question: str
+
+
+def is_safe_query(query: str):
+    forbidden = ["DROP", "DELETE", "UPDATE", "INSERT", "ALTER"]
+    return not any(word in query.upper() for word in forbidden)
+
+
+# ✅ NOW use decorator
+@router.post("/query")
+def query_data(request: QueryRequest):
     try:
-        sql = generate_sql(question)
+        sql = generate_sql(request.question)
 
-        data = run_query(sql)
+        if not is_safe_query(sql):
+            return {
+                "success": False,
+                "error": "Unsafe query generated",
+                "sql": sql
+            }
 
-        if isinstance(data, str):
-            return {"error": data, "sql": sql}
+        result = run_query(sql)
 
-        insight = explain_result(question, data)
+        # ⚡ faster: skip explanation for now
+        explanation = "Result generated successfully"
 
         return {
-            "question": question,
-            "sql": sql,
-            "data": data.to_dict(orient="records"),
-            "insight": insight
+            "success": True,
+            "data": {
+                "question": request.question,
+                "sql": sql,
+                "rows": result,
+                "explanation": explanation
+            }
         }
 
     except Exception as e:
-        return {"error": str(e)}
+        return {
+            "success": False,
+            "error": str(e)
+        }
