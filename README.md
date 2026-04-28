@@ -31,4 +31,4 @@ pip install -r requirements.txt
 ## 1. File location
 Make sure:
 ```text
-screenshot.png
+![Dashboard](frontend/screenshot.png)
